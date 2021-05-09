@@ -26,7 +26,7 @@ Note: access code for `baidu` is `swin`.
 
 ## Usage
 
-### Install
+### Install (Default)
 
 - Clone this repo:
 
@@ -70,6 +70,18 @@ pip install -v --disable-pip-version-check --no-cache-dir --global-option="--cpp
 pip install opencv-python==4.4.0.46 termcolor==1.1.0 yacs==0.1.8
 ```
 
+### Install (Nix)
+A cache of the derivations for the current lockfile (`flake.lock`) is provided at https://swin-transformer.cachix.org/ which will download the built derivations instead of building everything from scratch.
+
+`--run {{COMMAND}}` can be provided to run a command and then exiting instead of entering the shell and running the command there instead.
+
+```bash
+nix-shell \
+  --extra-substituters "https://swin-transformer.cachix.org/" \
+  --extra-trusted-public-keys "swin-transformer.cachix.org-1:8+CzE5CwCTE8dHkET0sIUgSbnTRQM3IjsO2B+fYU09I=" \
+  [--run "python -m torch.distributed.launch ..."]
+```
+
 ### Data preparation
 
 We use standard ImageNet dataset, you can download it from http://image-net.org/. We provide the following two ways to
@@ -97,7 +109,7 @@ load data:
       │   ├── img6.jpeg
       │   └── ...
       └── ...
- 
+
   ```
 - To boost the slow speed when reading images from massive small files, we also support zipped ImageNet, which includes
   four files:
@@ -113,14 +125,14 @@ load data:
       ├── train.zip
       ├── val_map.txt
       └── val.zip
-  
+
   $ head -n 5 data/ImageNet-Zip/val_map.txt
   ILSVRC2012_val_00000001.JPEG	65
   ILSVRC2012_val_00000002.JPEG	970
   ILSVRC2012_val_00000003.JPEG	230
   ILSVRC2012_val_00000004.JPEG	809
   ILSVRC2012_val_00000005.JPEG	516
-  
+
   $ head -n 5 data/ImageNet-Zip/train_map.txt
   n01440764/n01440764_10026.JPEG	0
   n01440764/n01440764_10027.JPEG	0
@@ -135,7 +147,7 @@ To evaluate a pre-trained `Swin Transformer` on ImageNet val, run:
 
 ```bash
 python -m torch.distributed.launch --nproc_per_node <num-of-gpus-to-use> --master_port 12345 main.py --eval \
---cfg <config-file> --resume <checkpoint> --data-path <imagenet-path> 
+--cfg <config-file> --resume <checkpoint> --data-path <imagenet-path>
 ```
 
 For example, to evaluate the `Swin-B` with a single GPU:
@@ -150,7 +162,7 @@ python -m torch.distributed.launch --nproc_per_node 1 --master_port 12345 main.p
 To train a `Swin Transformer` on ImageNet from scratch, run:
 
 ```bash
-python -m torch.distributed.launch --nproc_per_node <num-of-gpus-to-use> --master_port 12345  main.py \ 
+python -m torch.distributed.launch --nproc_per_node <num-of-gpus-to-use> --master_port 12345  main.py \
 --cfg <config-file> --data-path <imagenet-path> [--batch-size <batch-size-per-gpu> --output <output-directory> --tag <job-tag>]
 ```
 
@@ -175,14 +187,14 @@ For example, to train `Swin Transformer` with 8 GPU on a single node for 300 epo
 
 ```bash
 python -m torch.distributed.launch --nproc_per_node 8 --master_port 12345  main.py \
---cfg configs/swin_tiny_patch4_window7_224.yaml --data-path <imagenet-path> --batch-size 128 
+--cfg configs/swin_tiny_patch4_window7_224.yaml --data-path <imagenet-path> --batch-size 128
 ```
 
 `Swin-S`:
 
 ```bash
 python -m torch.distributed.launch --nproc_per_node 8 --master_port 12345  main.py \
---cfg configs/swin_small_patch4_window7_224.yaml --data-path <imagenet-path> --batch-size 128 
+--cfg configs/swin_small_patch4_window7_224.yaml --data-path <imagenet-path> --batch-size 128
 ```
 
 `Swin-B`:
@@ -191,6 +203,12 @@ python -m torch.distributed.launch --nproc_per_node 8 --master_port 12345  main.
 python -m torch.distributed.launch --nproc_per_node 8 --master_port 12345  main.py \
 --cfg configs/swin_base_patch4_window7_224.yaml --data-path <imagenet-path> --batch-size 64 \
 --accumulation-steps 2 [--use-checkpoint]
+```
+
+With Nix:
+
+```bash
+nix-shell --pure --run "python -m torch.distributed.launch --nproc_per_node 1 --master_port 12345 main.py --cfg configs/swin_base_patch4_window7_224.yaml --data-path data/imagenet --batch-size 64 --output outputs/Swin-B --accumulation-steps 2 --use-checkpoint"
 ```
 
 ### Throughput
